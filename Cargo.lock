@@ -315,7 +315,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "tiny-renderer"
+name = "tiny_renderer"
 version = "0.1.0"
 dependencies = [
  "image",
