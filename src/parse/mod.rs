@@ -3,7 +3,26 @@ use std::fs::File;
 use std::io::{prelude::*, BufReader};
 
 pub struct ObjVertex(pub [f64; 3]);
+
+impl ObjVertex {
+    pub fn x(&self) -> f64 {
+        self.0[0]
+    }
+
+    pub fn y(&self) -> f64 {
+        self.0[1]
+    }
+}
+
 pub struct ObjFace(pub [usize; 3]);
+
+impl ObjFace {
+    pub fn get_vertex_index(&self, index: usize) -> usize {
+        assert!(index < 3);
+
+        self.0[index] - 1
+    }
+}
 
 pub fn parse_obj(obj_file: &File) -> (VecDeque<ObjVertex>, VecDeque<ObjFace>) {
     let mut vertices = VecDeque::<ObjVertex>::new();
