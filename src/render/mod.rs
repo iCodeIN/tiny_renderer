@@ -1,4 +1,5 @@
-use crate::parse::{ObjFace, ObjVertex};
+use crate::geometry::core::{Face, Vec3f};
+use crate::geometry::ops::barycentric;
 use image::{Rgb, RgbImage};
 use std::collections::VecDeque;
 
@@ -41,10 +42,32 @@ pub fn line(
     }
 }
 
+pub fn new_triangle(
+    v0: &mut Vec3f,
+    v1: &mut Vec3f,
+    v2: &mut Vec3f,
+    image: &mut RgbImage,
+    color: Rgb<u8>,
+) {
+    let x_min = 0;
+    let x_max = image.width() - 1;
+    let y_min = 0;
+    let y_max = image.height() - 1;
+
+    for x in (x_min as usize)..=(x_max as usize) {
+        for y in (y_min as usize)..=(y_max as usize) {
+            let bc_coordinate = barycentric(vec![v0, v1, v2], &Vec3f([x as f64, y as f64, 0.0]));
+            if bc_coordinate.iter().all(|num| *num >= 0.0) {
+                image.put_pixel(x as u32, y as u32, color);
+            }
+        }
+    }
+}
+
 pub fn triangle(
-    v0: &mut ObjVertex,
-    v1: &mut ObjVertex,
-    v2: &mut ObjVertex,
+    v0: &mut Vec3f,
+    v1: &mut Vec3f,
+    v2: &mut Vec3f,
     image: &mut RgbImage,
     color: Rgb<u8>,
 ) {
@@ -89,47 +112,13 @@ pub fn triangle(
             image.put_pixel(x, (i as f64 + v0.y()) as u32, color);
         }
     }
-
-    // for y in (v0.y() as usize)..=(v1.y() as usize) {
-    //     let segment_height = v1.y() - v0.y() + 1.0;
-    //     let alpha = (y as f64 - v0.y()) / total_height;
-    //     let beta = (y as f64 - v0.y()) / segment_height;
-    //
-    //     let mut a = *v0 + (*v2 - *v0) * alpha;
-    //     let mut b = *v0 + (*v1 - *v0) * beta;
-    //
-    //     if a.x() > b.x() {
-    //         std::mem::swap(&mut a, &mut b)
-    //     };
-    //
-    //     for x in (a.x() as u32)..=(b.x() as u32) {
-    //         image.put_pixel(x, y as u32, color);
-    //     }
-    // }
-    //
-    // for y in (v1.y() as usize)..=(v2.y() as usize) {
-    //     let segment_height = v2.y() - v1.y() + 1.0;
-    //     let alpha = (y as f64 - v0.y()) / total_height;
-    //     let beta = (y as f64 - v1.y()) / segment_height;
-    //
-    //     let mut a = *v0 + (*v2 - *v0) * alpha;
-    //     let mut b = *v1 + (*v2 - *v1) * beta;
-    //
-    //     if a.x() > b.x() {
-    //         std::mem::swap(&mut a, &mut b)
-    //     };
-    //
-    //     for x in (a.x() as u32)..=(b.x() as u32) {
-    //         image.put_pixel(x, y as u32, color);
-    //     }
-    // }
 }
 
 pub fn wire_frame(
     mut image: &mut RgbImage,
     color: Rgb<u8>,
-    vertices: &VecDeque<ObjVertex>,
-    faces: &VecDeque<ObjFace>,
+    vertices: &VecDeque<Vec3f>,
+    faces: &VecDeque<Face>,
 ) {
     let width = image.width();
     let height = image.height();
