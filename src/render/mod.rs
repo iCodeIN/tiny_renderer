@@ -42,18 +42,12 @@ pub fn line(
     }
 }
 
-pub fn new_triangle(
-    v0: &mut Vec3f,
-    v1: &mut Vec3f,
-    v2: &mut Vec3f,
-    image: &mut RgbImage,
-    color: Rgb<u8>,
-) {
-    let x_min = 0;
-    let x_max = image.width() - 1;
-    let y_min = 0;
-    let y_max = image.height() - 1;
+pub fn new_triangle(v0: &Vec3f, v1: &Vec3f, v2: &Vec3f, image: &mut RgbImage, color: Rgb<u8>) {
+    // find bounding box
+    let (x_min, x_max, y_min, y_max) =
+        find_bounding_box(v0, v1, v2, image.width() as usize, image.height() as usize);
 
+    // iterate over points in bounding box and paint ones which are in the triangle
     for x in (x_min as usize)..=(x_max as usize) {
         for y in (y_min as usize)..=(y_max as usize) {
             let bc_coordinate = barycentric(vec![v0, v1, v2], &Vec3f([x as f64, y as f64, 0.0]));
@@ -62,6 +56,28 @@ pub fn new_triangle(
             }
         }
     }
+}
+
+fn find_bounding_box(
+    v0: &Vec3f,
+    v1: &Vec3f,
+    v2: &Vec3f,
+    width: usize,
+    height: usize,
+) -> (usize, usize, usize, usize) {
+    let mut x_values = vec![v0.x(), v1.x(), v2.x()];
+    x_values.sort_by(|a, b| a.partial_cmp(b).unwrap());
+
+    let mut y_values = vec![v0.y(), v1.y(), v2.y()];
+    y_values.sort_by(|a, b| a.partial_cmp(b).unwrap());
+
+    let x_min = std::cmp::max(0, x_values[0] as usize);
+    let x_max = std::cmp::min((width - 1) as usize, x_values[2] as usize);
+
+    let y_min = std::cmp::max(0, y_values[0] as usize);
+    let y_max = std::cmp::min((height - 1) as usize, y_values[2] as usize);
+
+    (x_min, x_max, y_min, y_max)
 }
 
 pub fn triangle(
