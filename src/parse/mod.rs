@@ -1,7 +1,9 @@
 use std::collections::VecDeque;
 use std::fs::File;
 use std::io::{prelude::*, BufReader};
+use std::ops::{Add, Mul, Sub};
 
+#[derive(Clone, Copy)]
 pub struct ObjVertex(pub [f64; 3]);
 
 impl ObjVertex {
@@ -11,6 +13,42 @@ impl ObjVertex {
 
     pub fn y(&self) -> f64 {
         self.0[1]
+    }
+
+    pub fn z(&self) -> f64 {
+        self.0[2]
+    }
+}
+
+impl Add for ObjVertex {
+    type Output = Self;
+
+    fn add(self, other: ObjVertex) -> Self {
+        ObjVertex([
+            self.x() + other.x(),
+            self.y() + other.y(),
+            self.z() + other.z(),
+        ])
+    }
+}
+
+impl Sub for ObjVertex {
+    type Output = Self;
+
+    fn sub(self, other: ObjVertex) -> Self {
+        ObjVertex([
+            self.x() - other.x(),
+            self.y() - other.y(),
+            self.z() - other.z(),
+        ])
+    }
+}
+
+impl Mul<f64> for ObjVertex {
+    type Output = Self;
+
+    fn mul(self, rhs: f64) -> Self {
+        ObjVertex([self.x() * rhs, self.y() * rhs, self.z() * rhs])
     }
 }
 

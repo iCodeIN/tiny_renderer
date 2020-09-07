@@ -41,6 +41,90 @@ pub fn line(
     }
 }
 
+pub fn triangle(
+    v0: &mut ObjVertex,
+    v1: &mut ObjVertex,
+    v2: &mut ObjVertex,
+    image: &mut RgbImage,
+    color: Rgb<u8>,
+) {
+    if v0.y() == v1.y() && v0.y() == v2.y() {
+        return;
+    }
+
+    if v0.y() > v1.y() {
+        std::mem::swap(v0, v1)
+    }
+    if v0.y() > v2.y() {
+        std::mem::swap(v0, v2)
+    }
+    if v1.y() > v2.y() {
+        std::mem::swap(v1, v2)
+    }
+
+    let total_height = v2.y() - v0.y();
+    for i in 0..=(total_height as u32) {
+        let second_half = i > (v1.y() - v0.y()) as u32 || v1.y() == v0.y();
+        let segment_height = if second_half {
+            v2.y() - v1.y()
+        } else {
+            v1.y() - v0.y()
+        };
+
+        let alpha = i as f64 / total_height;
+        let beta = (i as f64 - if second_half { v1.y() - v0.y() } else { 0.0 }) / segment_height;
+
+        let mut a = *v0 + (*v2 - *v0) * alpha;
+        let mut b = if second_half {
+            *v1 + (*v2 - *v1) * beta
+        } else {
+            *v0 + (*v1 - *v0) * beta
+        };
+
+        if a.x() > b.x() {
+            std::mem::swap(&mut a, &mut b)
+        };
+
+        for x in (a.x() as u32)..=(b.x() as u32) {
+            image.put_pixel(x, (i as f64 + v0.y()) as u32, color);
+        }
+    }
+
+    // for y in (v0.y() as usize)..=(v1.y() as usize) {
+    //     let segment_height = v1.y() - v0.y() + 1.0;
+    //     let alpha = (y as f64 - v0.y()) / total_height;
+    //     let beta = (y as f64 - v0.y()) / segment_height;
+    //
+    //     let mut a = *v0 + (*v2 - *v0) * alpha;
+    //     let mut b = *v0 + (*v1 - *v0) * beta;
+    //
+    //     if a.x() > b.x() {
+    //         std::mem::swap(&mut a, &mut b)
+    //     };
+    //
+    //     for x in (a.x() as u32)..=(b.x() as u32) {
+    //         image.put_pixel(x, y as u32, color);
+    //     }
+    // }
+    //
+    // for y in (v1.y() as usize)..=(v2.y() as usize) {
+    //     let segment_height = v2.y() - v1.y() + 1.0;
+    //     let alpha = (y as f64 - v0.y()) / total_height;
+    //     let beta = (y as f64 - v1.y()) / segment_height;
+    //
+    //     let mut a = *v0 + (*v2 - *v0) * alpha;
+    //     let mut b = *v1 + (*v2 - *v1) * beta;
+    //
+    //     if a.x() > b.x() {
+    //         std::mem::swap(&mut a, &mut b)
+    //     };
+    //
+    //     for x in (a.x() as u32)..=(b.x() as u32) {
+    //         image.put_pixel(x, y as u32, color);
+    //     }
+    // }
+}
+
 pub fn wire_frame(
     mut image: &mut RgbImage,
     color: Rgb<u8>,
