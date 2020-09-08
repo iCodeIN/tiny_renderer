@@ -1,6 +1,7 @@
 use crate::geometry::core::{Face, Vec3f};
-use crate::geometry::ops::barycentric;
-use image::{Rgb, RgbImage};
+use crate::geometry::ops::{barycentric, cross_product, dot_product};
+use image::{Rgb, RgbImage, Rgba, RgbaImage};
+use rand::Rng;
 use std::collections::VecDeque;
 
 pub fn line(
@@ -42,7 +43,29 @@ pub fn line(
     }
 }
 
-pub fn new_triangle(v0: &Vec3f, v1: &Vec3f, v2: &Vec3f, image: &mut RgbImage, color: Rgb<u8>) {
+pub fn triangle(v0: &Vec3f, v1: &Vec3f, v2: &Vec3f, image: &mut RgbImage, color: Rgb<u8>) {
+    // find bounding box
+    let (x_min, x_max, y_min, y_max) =
+        find_bounding_box(v0, v1, v2, image.width() as usize, image.height() as usize);
+
+    // iterate over points in bounding box and paint ones which are in the triangle
+    for x in (x_min as usize)..=(x_max as usize) {
+        for y in (y_min as usize)..=(y_max as usize) {
+            let bc_coordinate = barycentric(vec![v0, v1, v2], &Vec3f([x as f64, y as f64, 0.0]));
+            if bc_coordinate.iter().all(|num| *num >= 0.0) {
+                image.put_pixel(x as u32, y as u32, color);
+            }
+        }
+    }
+}
+
+pub fn triangle_with_gamma(
+    v0: &Vec3f,
+    v1: &Vec3f,
+    v2: &Vec3f,
+    image: &mut RgbaImage,
+    color: Rgba<u8>,
+) {
     // find bounding box
     let (x_min, x_max, y_min, y_max) =
         find_bounding_box(v0, v1, v2, image.width() as usize, image.height() as usize);
@@ -80,7 +103,7 @@ fn find_bounding_box(
     (x_min, x_max, y_min, y_max)
 }
 
-pub fn triangle(
+pub fn old_triangle(
     v0: &mut Vec3f,
     v1: &mut Vec3f,
     v2: &mut Vec3f,
@@ -152,5 +175,82 @@ pub fn wire_frame(
 
             line(x0, y0, x1, y1, &mut image, color);
         }
+    }
+}
+
+pub fn with_light(
+    image: &mut RgbaImage,
+    vertices: &VecDeque<Vec3f>,
+    faces: &VecDeque<Face>,
+    light_dir: Vec3f,
+) {
+    let width = image.width();
+    let height = image.height();
+
+    for face in faces {
+        let mut screen_vertices = Vec::with_capacity(3);
+        let mut world_vertices = Vec::with_capacity(3);
+
+        for i in 0..3 {
+            let vertex: &Vec3f = &vertices[face.get_vertex_index(i)];
+
+            let x0 = (vertex.x() + 1.0) * (width / 2) as f64;
+            let y0 = (vertex.y() + 1.0) * (height / 2) as f64;
+
+            screen_vertices.push(Vec3f([x0, y0, 0.0]));
+            world_vertices.push(*vertex);
+        }
+
+        let side1 = world_vertices[2] - world_vertices[0];
+        let side2 = world_vertices[1] - world_vertices[0];
+
+        let mut n = cross_product(side1, side2);
+        n.normalize();
+
+        let intensity = dot_product(n, light_dir);
+
+        if intensity > 0.0 {
+            let color_intensity = (255.0 * intensity) as u8;
+
+            triangle_with_gamma(
+                &screen_vertices[0],
+                &screen_vertices[1],
+                &screen_vertices[2],
+                image,
+                Rgba([color_intensity, color_intensity, color_intensity, 255]),
+            );
+        }
+    }
+}
+
+pub fn flat_shade(image: &mut RgbImage, vertices: &VecDeque<Vec3f>, faces: &VecDeque<Face>) {
+    let width = image.width();
+    let height = image.height();
+
+    let mut rng = rand::thread_rng();
+
+    for face in faces {
+        let mut screen_vertices = Vec::with_capacity(3);
+
+        for i in 0..3 {
+            let vertex = &vertices[face.get_vertex_index(i)];
+
+            let x0 = (vertex.x() + 1.0) * (width / 2) as f64;
+            let y0 = (vertex.y() + 1.0) * (height / 2) as f64;
+
+            screen_vertices.push(Vec3f([x0, y0, 0.0]));
+        }
+
+        triangle(
+            &screen_vertices[0],
+            &screen_vertices[1],
+            &screen_vertices[2],
+            image,
+            Rgb([
+                rng.gen_range(0, 254),
+                rng.gen_range(0, 254),
+                rng.gen_range(0, 254),
+            ]),
+        )
     }
 }

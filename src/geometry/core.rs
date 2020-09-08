@@ -1,7 +1,7 @@
 use std::ops::{Add, Div, Index, Mul, Sub};
 use std::slice::Iter;
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct Vec3f(pub [f64; 3]);
 
 impl Index<usize> for Vec3f {
@@ -30,6 +30,12 @@ impl Vec3f {
 
     pub fn z(&self) -> f64 {
         self.0[2]
+    }
+
+    pub fn normalize(&mut self) {
+        let sum = self.x().powi(2) + self.y().powi(2) + self.z().powi(2);
+
+        *self = *self / sum.sqrt();
     }
 }
 

@@ -8,6 +8,10 @@ pub fn cross_product(vec1: Vec3f, vec2: Vec3f) -> Vec3f {
     ])
 }
 
+pub fn dot_product(vec1: Vec3f, vec2: Vec3f) -> f64 {
+    (vec1.x() * vec2.x()) + (vec1.y() * vec2.y()) + (vec1.z() * vec2.z())
+}
+
 pub fn barycentric(simplex: Vec<&Vec3f>, point: &Vec3f) -> Vec3f {
     let perpendicular_vec = cross_product(
         Vec3f([
