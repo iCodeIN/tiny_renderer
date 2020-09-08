@@ -81,6 +81,34 @@ pub fn triangle_with_gamma(
     }
 }
 
+pub fn triangle_with_gamma_smart(
+    v0: &Vec3f,
+    v1: &Vec3f,
+    v2: &Vec3f,
+    z_buffer: &mut Vec<f64>,
+    image: &mut RgbaImage,
+    color: Rgba<u8>,
+) {
+    // find bounding box
+    let (x_min, x_max, y_min, y_max) =
+        find_bounding_box(v0, v1, v2, image.width() as usize, image.height() as usize);
+
+    for x in (x_min as usize)..=(x_max as usize) {
+        for y in (y_min as usize)..=(y_max as usize) {
+            let bc_coordinate = barycentric(vec![v0, v1, v2], &Vec3f([x as f64, y as f64, 0.0]));
+            if bc_coordinate.iter().any(|num| *num < 0.0) {
+                continue;
+            }
+            let z =
+                v0.z() * bc_coordinate[0] + v1.z() * bc_coordinate[1] + v2.z() * bc_coordinate[2];
+            if z_buffer[x + y * (image.width()) as usize] < z {
+                z_buffer[x + y * (image.width()) as usize] = z;
+                image.put_pixel(x as u32, y as u32, color);
+            }
+        }
+    }
+}
+
 fn find_bounding_box(
     v0: &Vec3f,
     v1: &Vec3f,
@@ -216,6 +244,54 @@ pub fn with_light(
                 &screen_vertices[0],
                 &screen_vertices[1],
                 &screen_vertices[2],
+                image,
+                Rgba([color_intensity, color_intensity, color_intensity, 255]),
+            );
+        }
+    }
+}
+
+pub fn with_light_smart(
+    image: &mut RgbaImage,
+    vertices: &VecDeque<Vec3f>,
+    faces: &VecDeque<Face>,
+    light_dir: Vec3f,
+) {
+    let width = image.width();
+    let height = image.height();
+
+    let mut z_buffer: Vec<f64> = vec![f64::NEG_INFINITY; (image.width() * image.height()) as usize];
+
+    for face in faces {
+        let mut screen_vertices = Vec::with_capacity(3);
+        let mut world_vertices = Vec::with_capacity(3);
+
+        for i in 0..3 {
+            let vertex: &Vec3f = &vertices[face.get_vertex_index(i)];
+
+            let x0 = (vertex.x() + 1.0) * (width / 2) as f64;
+            let y0 = (vertex.y() + 1.0) * (height / 2) as f64;
+
+            screen_vertices.push(Vec3f([x0, y0, 0.0]));
+            world_vertices.push(*vertex);
+        }
+
+        let side1 = world_vertices[2] - world_vertices[0];
+        let side2 = world_vertices[1] - world_vertices[0];
+
+        let mut n = cross_product(side1, side2);
+        n.normalize();
+
+        let intensity = dot_product(n, light_dir);
+
+        if intensity > 0.0 {
+            let color_intensity = (255.0 * intensity) as u8;
+
+            triangle_with_gamma_smart(
+                &screen_vertices[0],
+                &screen_vertices[1],
+                &screen_vertices[2],
+                &mut z_buffer,
                 image,
                 Rgba([color_intensity, color_intensity, color_intensity, 255]),
             );

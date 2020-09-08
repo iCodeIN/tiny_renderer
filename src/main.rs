@@ -17,7 +17,7 @@ fn main() {
 
     let mut light_dir = Vec3f([0.0, 0.0, -1.0]);
     light_dir.normalize();
-    render::with_light(&mut image, &vertices, &faces, light_dir);
+    render::with_light_smart(&mut image, &vertices, &faces, light_dir);
 
     imageops::flip_vertical_in_place(&mut image);
 
