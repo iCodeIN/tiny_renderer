@@ -22,6 +22,6 @@ fn main() {
     imageops::flip_vertical_in_place(&mut image);
 
     image
-        .save(Path::new("test_image.jpeg"))
+        .save(Path::new("output.jpeg"))
         .expect("Could not save the file");
 }
