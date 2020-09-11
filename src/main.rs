@@ -15,13 +15,13 @@ fn main() {
 
     let (vertices, faces) = parse::parse_obj(&obj_file);
 
-    let mut light_dir = Vec3f([0.0, 0.0, -1.0]);
+    let mut light_dir = Vec3f([0.0, 0.5, -1.0]);
     light_dir.normalize();
     render::with_light_smart(&mut image, &vertices, &faces, light_dir);
 
     imageops::flip_vertical_in_place(&mut image);
 
     image
-        .save(Path::new("output.jpeg"))
+        .save(Path::new("lighting.jpeg"))
         .expect("Could not save the file");
 }
