@@ -1,7 +1,7 @@
 # tiny-renderer
 A simple renderer written in rust.
 
-Based on Amazing tutorial by [ssloy](https://github.com/ssloy)
+Based on amazing tutorial by [ssloy](https://github.com/ssloy)
 
 ### Wireframe
 ![](assets/wireframe.jpeg)
